@@ -4,7 +4,6 @@ package io.github.tdhd.ast.kernel
 // Convolution Kernels for Natural Language
 
 import scala.annotation.tailrec
-import scala.tools.nsc.doc.DocParser.Tree
 
 trait Base {
   def similarity: Double
@@ -12,18 +11,18 @@ trait Base {
 
 object ConvNLP {
 
-  implicit class TreeAug(t: Tree) {
-    def sameAs(other: Tree) = t.shortClass == other.shortClass
+  implicit class TreeAug(t: scala.reflect.internal.Trees#Tree) {
+    def sameAs(other: scala.reflect.internal.Trees#Tree) = t.shortClass == other.shortClass
 
-    def differentFrom(other: Tree) = !sameAs(other)
+    def differentFrom(other: scala.reflect.internal.Trees#Tree) = !sameAs(other)
   }
 
-  def bothTerminals(f: Tree, s: Tree) = f.children.isEmpty && s.children.isEmpty
+  def bothTerminals(f: scala.reflect.internal.Trees#Tree, s: scala.reflect.internal.Trees#Tree) = f.children.isEmpty && s.children.isEmpty
 
-  def allNodesOf(t: Tree): Seq[Tree] = {
+  def allNodesOf(t: scala.reflect.internal.Trees#Tree): Seq[scala.reflect.internal.Trees#Tree] = {
 
     @tailrec
-    def rec(elements: Seq[Tree], accumulator: Seq[Tree]): Seq[Tree] = elements match {
+    def rec(elements: Seq[scala.reflect.internal.Trees#Tree], accumulator: Seq[scala.reflect.internal.Trees#Tree]): Seq[scala.reflect.internal.Trees#Tree] = elements match {
       case Nil ⇒ accumulator
       case elem :: tail ⇒ rec(elem.children ++ tail, elem +: accumulator)
     }
@@ -33,11 +32,11 @@ object ConvNLP {
 
 }
 
-class ConvNLP(val first: Tree, val second: Tree) extends Base {
+class ConvNLP(val first: scala.reflect.internal.Trees#Tree, val second: scala.reflect.internal.Trees#Tree) extends Base {
 
   import ConvNLP._
 
-  private def score(f: Tree, s: Tree): Double = {
+  private def score(f: scala.reflect.internal.Trees#Tree, s: scala.reflect.internal.Trees#Tree): Double = {
     if (f differentFrom s)
       0.0
     else if ((f sameAs s) && bothTerminals(f, s))
