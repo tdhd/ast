@@ -9,26 +9,15 @@ object Loader {
   val mainRoot = new File("src/main")
   val testRoot = new File("src/test")
 
-  println(mainRoot.getAbsoluteFile)
-  println(testRoot.getAbsoluteFile)
+  case class LoadedFile(file: File, source: String)
 
-  val allFiles: File ⇒ Seq[(String, String)] = root ⇒ filenames(root, pattern).map { file ⇒
-    (file.getName, scala.io.Source.fromFile(file).mkString.replaceAll("package", "//package"))
+  val allFiles: File ⇒ Seq[LoadedFile] = root ⇒ filenames(root, pattern).map { file ⇒
+    LoadedFile(file, scala.io.Source.fromFile(file).mkString.replaceAll("package", "//package"))
   }
 
   def filenames(f: File, r: Regex): Seq[File] = {
     val these = f.listFiles
     val good = these.filter(f ⇒ r.findFirstIn(f.getName).isDefined)
     good ++ these.filter(_.isDirectory).flatMap(filenames(_, r))
-  }
-
-  def testMethod(f: File) = {
-    val these = f.listFiles
-    these.filter(x ⇒ x.canRead)
-    val g = 1 :: Nil
-    (g ++ g).flatMap(_ ⇒ 1 :: Nil)
-    "1" :: "2" :: Nil map {
-      _ * 2
-    }
   }
 }

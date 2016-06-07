@@ -10,5 +10,6 @@ object Jit {
 
   val toolbox = currentMirror.mkToolBox()
 
-  def treeFrom(src: String): universe.Tree = toolbox.parse(src).asInstanceOf[universe.Tree]
+  def treeFrom(src: String): universe.Tree =
+    toolbox.parse(src).asInstanceOf[universe.Tree]
 }

@@ -1,29 +1,34 @@
 package io.github.tdhd
 package ast
 
+import java.io.File
+
+import _root_.io.github.tdhd.ast.io.Loader.LoadedFile
 import io.Loader
 
-object Main {
-  val universe = scala.reflect.runtime.universe
+import scala.reflect.internal.Trees
 
-  import universe._
+object Main {
+
+  case class Source(file: LoadedFile, functions: Seq[Trees#Tree])
+
+  def loadFunctionTrees(root: File): Seq[Source] = {
+    for {
+      file ← Loader.allFiles(root)
+      tree = compiler.Jit.treeFrom(file.source)
+    } yield Source(file, TreeParser.defDefExprsFrom(tree))
+  }
 
   def main(args: Array[String]): Unit = {
+    val functionTrees = loadFunctionTrees(Loader.testRoot)
 
-//    Loader.allFiles(Loader.testRoot).foreach(println)
+    val kernels = for {
+      ta ← functionTrees
+      tb ← functionTrees
+      _ = println(s"a ${ta.file.file} has ${ta.functions.size} function definitions")
+      _ = println(s"b ${tb.file.file} has ${tb.functions.size} function definitions")
+    } yield new kernel.ConvNLP(ta.functions.drop(1).head, tb.functions.drop(3).head)
 
-    val f = Loader.allFiles(Loader.testRoot).last
-    println(s"opening ${f._1}")
-    val tree = compiler.Jit.treeFrom(f._2)
-
-    val res = tree.collect {
-      case q"$mods def $tname[..$tparams](...$paramss): $tpt = $expr" ⇒
-        println(expr)
-        // todo: runtime
-        expr.asInstanceOf[scala.reflect.internal.Trees#Tree]
-    }
-
-    val k = new kernel.ConvNLP(res.drop(1).head, res.drop(2).head)
-    println(k.similarity)
+    kernels.map(_.similarity).foreach(println)
   }
 }
