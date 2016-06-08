@@ -3,6 +3,8 @@ package io.github.tdhd.ast.kernel
 // http://machinelearning.wustl.edu/mlpapers/paper_files/nips02-AA58.pdf
 // Convolution Kernels for Natural Language
 
+import scala.reflect.internal.Trees
+
 import scala.annotation.tailrec
 
 trait Base {
@@ -11,18 +13,18 @@ trait Base {
 
 object ConvNLP {
 
-  implicit class TreeAug(t: scala.reflect.internal.Trees#Tree) {
-    def sameAs(other: scala.reflect.internal.Trees#Tree) = t.shortClass == other.shortClass
+  implicit class TreeAug(t: Trees#Tree) {
+    def sameAs(other: Trees#Tree) = t.shortClass == other.shortClass
 
-    def differentFrom(other: scala.reflect.internal.Trees#Tree) = !sameAs(other)
+    def differentFrom(other: Trees#Tree) = !sameAs(other)
   }
 
-  def bothTerminals(f: scala.reflect.internal.Trees#Tree, s: scala.reflect.internal.Trees#Tree) = f.children.isEmpty && s.children.isEmpty
+  def bothTerminals(f: Trees#Tree, s: Trees#Tree) = f.children.isEmpty && s.children.isEmpty
 
-  def allNodesOf(t: scala.reflect.internal.Trees#Tree): Seq[scala.reflect.internal.Trees#Tree] = {
+  def allNodesOf(t: Trees#Tree): Seq[Trees#Tree] = {
 
     @tailrec
-    def rec(elements: Seq[scala.reflect.internal.Trees#Tree], accumulator: Seq[scala.reflect.internal.Trees#Tree]): Seq[scala.reflect.internal.Trees#Tree] = elements match {
+    def rec(elements: Seq[Trees#Tree], accumulator: Seq[Trees#Tree]): Seq[Trees#Tree] = elements match {
       case Nil ⇒ accumulator
       case elem :: tail ⇒ rec(elem.children ++ tail, elem +: accumulator)
     }
@@ -32,11 +34,11 @@ object ConvNLP {
 
 }
 
-class ConvNLP(val first: scala.reflect.internal.Trees#Tree, val second: scala.reflect.internal.Trees#Tree) extends Base {
+class ConvNLP(val first: Trees#Tree, val second: Trees#Tree) extends Base {
 
   import ConvNLP._
 
-  private def score(f: scala.reflect.internal.Trees#Tree, s: scala.reflect.internal.Trees#Tree): Double = {
+  private def score(f: Trees#Tree, s: Trees#Tree): Double = {
     if (f differentFrom s)
       0.0
     else if ((f sameAs s) && bothTerminals(f, s))

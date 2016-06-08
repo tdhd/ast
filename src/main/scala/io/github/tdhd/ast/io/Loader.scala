@@ -1,7 +1,10 @@
-package io.github.tdhd.ast.io
+package io.github.tdhd
+package ast
+package io
 
 import java.io.File
 
+import scala.reflect.internal.Trees
 import scala.util.matching.Regex
 
 object Loader {
@@ -10,12 +13,21 @@ object Loader {
   val testRoot = new File("src/test")
 
   case class LoadedFile(file: File, source: String)
+  case class Source(file: LoadedFile, functions: Seq[Trees#Tree])
 
-  val allFiles: File ⇒ Seq[LoadedFile] = root ⇒ filenames(root, pattern).map { file ⇒
-    LoadedFile(file, scala.io.Source.fromFile(file).mkString.replaceAll("package", "//package"))
+  def functionBodiesFor(root: File): Seq[Source] = {
+    for {
+      file ← Loader.allFiles(root)
+      fileSourceTree = compiler.Jit.treeFrom(file.source)
+    } yield Source(file, parser.TreeParser.defDefExprsFrom(fileSourceTree))
   }
 
-  def filenames(f: File, r: Regex): Seq[File] = {
+  private def allFiles(root: File): Seq[LoadedFile] =
+    filenames(root, pattern).map { file ⇒
+      LoadedFile(file, scala.io.Source.fromFile(file).mkString.replaceAll("package", "//package"))
+    }
+
+  private def filenames(f: File, r: Regex): Seq[File] = {
     val these = f.listFiles
     val good = these.filter(f ⇒ r.findFirstIn(f.getName).isDefined)
     good ++ these.filter(_.isDirectory).flatMap(filenames(_, r))
