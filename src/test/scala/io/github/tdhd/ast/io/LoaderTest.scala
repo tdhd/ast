@@ -17,10 +17,10 @@ class LoaderTest extends WordSpec with Matchers with Inspectors {
       sources should have size 1
 
       forAll(sources) { source ⇒
-        source.functions should have size 3
+        source.functions should have size 4
 
         forExactly(1, source.functions) { fn ⇒
-          showRaw(fn) shouldBe rawFn
+          showRaw(fn.expr) shouldBe rawFn
         }
 
       }
@@ -32,6 +32,6 @@ class LoaderTest extends WordSpec with Matchers with Inspectors {
 object LoaderTest {
 
   val testRoot = new File("src/test/resources")
-  val rawFn = """Select(Apply(Select(Apply(Select(Literal(Constant(1)), TermName("to")), List(Literal(Constant(5)))), TermName("map")), List(Function(List(ValDef(Modifiers(PARAM | SYNTHETIC), TermName("x$1"), TypeTree(), EmptyTree)), Apply(Select(Ident(TermName("x$1")), TermName("$times")), List(Literal(Constant(2))))))), TermName("headOption"))"""
+  val rawFn = """Apply(Ident(TermName("Some")), List(Ident(TermName("p"))))"""
 
 }

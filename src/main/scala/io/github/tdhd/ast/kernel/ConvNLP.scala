@@ -7,6 +7,8 @@ import scala.reflect.internal.Trees
 
 import scala.annotation.tailrec
 
+// todo: need normalization of scores
+
 trait Base {
   def similarity: Double
 }

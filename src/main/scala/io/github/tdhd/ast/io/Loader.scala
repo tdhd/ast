@@ -4,22 +4,23 @@ package io
 
 import java.io.File
 
-import scala.reflect.internal.Trees
+import parser.TreeParser.DefDef
+
 import scala.util.matching.Regex
 
 object Loader {
   val pattern = """.*\.scala$""".r
   val mainRoot = new File("src/main")
-  val testRoot = new File("src/test")
+  val testRoot = new File("src/test/resources/code")
 
   case class LoadedFile(file: File, source: String)
-  case class Source(file: LoadedFile, functions: Seq[Trees#Tree])
+  case class Source(file: LoadedFile, functions: Seq[DefDef])
 
   def functionBodiesFor(root: File): Seq[Source] = {
     for {
       file ← Loader.allFiles(root)
       fileSourceTree = compiler.Jit.treeFrom(file.source)
-    } yield Source(file, parser.TreeParser.defDefExprsFrom(fileSourceTree))
+    } yield Source(file, parser.TreeParser.defdefFrom(fileSourceTree))
   }
 
   private def allFiles(root: File): Seq[LoadedFile] =

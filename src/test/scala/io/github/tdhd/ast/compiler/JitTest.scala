@@ -8,10 +8,10 @@ class JitTest extends WordSpec with Matchers with Inspectors {
 
   import JitTest._
 
-  "Loader" should {
-    "load all functions trees for all sources" in {
+  "Jit compiler" should {
+    "parse AST from source" in {
       val srcTree = Jit.treeFrom(src)
-      srcTree.children should have size 3
+      srcTree.children should have size 4
     }
   }
 
