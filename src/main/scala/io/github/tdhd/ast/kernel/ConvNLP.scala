@@ -34,9 +34,15 @@ object ConvNLP {
     rec(t :: Nil, Nil)
   }
 
+  def apply(first: Trees#Tree, second: Trees#Tree, lambda: Double) = {
+    val normalizer =
+      math.sqrt(new ConvNLP(first, first, lambda).similarity * new ConvNLP(second, second, lambda).similarity)
+
+    new ConvNLP(first, second, lambda).similarity / normalizer
+  }
 }
 
-class ConvNLP(val first: Trees#Tree, val second: Trees#Tree) extends Base {
+class ConvNLP(val first: Trees#Tree, val second: Trees#Tree, val lambda: Double) extends Base {
 
   import ConvNLP._
 
@@ -44,7 +50,7 @@ class ConvNLP(val first: Trees#Tree, val second: Trees#Tree) extends Base {
     if (f differentFrom s)
       0.0
     else if ((f sameAs s) && bothTerminals(f, s))
-      1.0
+      lambda
     else {
 
       val scores = for {
@@ -54,7 +60,7 @@ class ConvNLP(val first: Trees#Tree, val second: Trees#Tree) extends Base {
         sc ← allNodesOf(s) diff Seq(s)
       } yield 1 + score(fc, sc)
 
-      scores.product
+      lambda * scores.product
     }
   }
 

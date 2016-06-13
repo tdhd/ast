@@ -25,8 +25,9 @@ object Main {
     println(first)
     println(second)
 
-    val k = new kernel.ConvNLP(first.expr, second.expr)
-    println(k.similarity)
+    val lambda = 0.01
+    val sim = kernel.ConvNLP(first.expr, second.expr, lambda)
+    println(sim)
 
 //    val kernels = for {
 //      ta ← sourceFileDefs
