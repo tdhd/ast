@@ -22,8 +22,10 @@ object Main {
     val first = sourceFileDefs.head.functions(2)
     val second = sourceFileDefs.head.functions(3)
 
-    println(first)
-    println(second)
+    import scala.reflect.runtime.universe._
+    println("---"*10)
+    println(showRaw(sourceFileDefs.head.functions(3)))
+    println("---"*10)
 
     val lambda = 0.01
     val sim = kernel.ConvNLP(first.expr, second.expr, lambda)
