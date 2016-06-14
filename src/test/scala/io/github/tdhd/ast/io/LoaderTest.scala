@@ -17,7 +17,7 @@ class LoaderTest extends WordSpec with Matchers with Inspectors {
       sources should have size 1
 
       forAll(sources) { source ⇒
-        source.functions should have size 4
+        source.functions should have size 12
 
         forExactly(1, source.functions) { fn ⇒
           showRaw(fn.expr) shouldBe rawFn
