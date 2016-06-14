@@ -3,11 +3,8 @@ package io.github.tdhd.ast.kernel
 // http://machinelearning.wustl.edu/mlpapers/paper_files/nips02-AA58.pdf
 // Convolution Kernels for Natural Language
 
-import scala.reflect.internal.Trees
-
 import scala.annotation.tailrec
-
-// todo: need normalization of scores
+import scala.reflect.internal.Trees
 
 trait Base {
   def similarity: Double
