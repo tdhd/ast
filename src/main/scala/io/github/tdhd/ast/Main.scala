@@ -1,26 +1,20 @@
 package io.github.tdhd
 package ast
 
-import io.Loader
-
-import scala.reflect.runtime.universe._
+import scala.meta._
 
 object Main {
 
   def main(args: Array[String]): Unit = {
-    val sourceFileDefs = Loader.functionBodiesFor(Loader.testRoot)
 
-    println("---"*10)
-    println(showRaw(sourceFileDefs.head.functions(3)))
-    println("---"*10)
+    val tests = io.Loader.sourceFilesFor(io.Loader.testRoot)
+    val bodies = tests.head.functionBodies
 
-    println("-"*100)
+    bodies.map(_.structure).foreach(println)
+//    bodies.map(_.tokens).foreach(println)
+    bodies.map(_.syntax).foreach(println)
 
-    val similarities = for {
-      f ← sourceFileDefs.head.functions
-      s ← sourceFileDefs.head.functions
-    } yield s"""K(${f.tname}, ${s.tname}): ${kernel.ConvNLP(f.expr, s.expr, 0.01)}"""
-
-    similarities.foreach(println)
+    val sim = kernel.ConvNLP(bodies(2), bodies(3), lambda = 0.01)
+    println(sim)
   }
 }

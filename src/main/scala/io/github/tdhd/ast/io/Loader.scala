@@ -4,8 +4,7 @@ package io
 
 import java.io.File
 
-import parser.TreeParser.DefDef
-
+import scala.meta._
 import scala.util.matching.Regex
 
 object Loader {
@@ -14,13 +13,17 @@ object Loader {
   val testRoot = new File("src/test/resources/code")
 
   case class LoadedFile(file: File, source: String)
-  case class Source(file: LoadedFile, functions: Seq[DefDef])
+  case class LoaderSourceFile(file: LoadedFile, parsedSource: Parsed[scala.meta.Source], functionBodies: Seq[Tree])
 
-  def functionBodiesFor(root: File): Seq[Source] = {
+  def sourceFilesFor(root: File): Seq[LoaderSourceFile] = {
     for {
       file ← Loader.allFiles(root)
-      fileSourceTree = compiler.Jit.treeFrom(file.source)
-    } yield Source(file, parser.TreeParser.defdefFrom(fileSourceTree))
+      fileSource = file.source.parse[Source]
+      functionBodies = fileSource.get.collect {
+        case q"..$mods def $tname[..$tparams](...$paramss): $tpe = $ex" ⇒
+          ex
+      }
+    } yield LoaderSourceFile(file, fileSource, functionBodies)
   }
 
   private def allFiles(root: File): Seq[LoadedFile] =
