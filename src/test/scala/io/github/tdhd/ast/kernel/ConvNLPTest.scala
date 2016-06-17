@@ -1,8 +1,9 @@
 package io.github.tdhd.ast.kernel
 
+import io.github.tdhd.ast.io.Loader
 import org.scalatest.{Inspectors, Matchers, WordSpec}
 
-import scala.reflect.runtime.universe._
+import scala.meta._
 
 class ConvNLPTest extends WordSpec with Matchers with Inspectors {
 
@@ -23,11 +24,11 @@ class ConvNLPTest extends WordSpec with Matchers with Inspectors {
     }
 
     "yield 0 for completely different trees" in new ConvNLPScope {
-      similarityOf(literalConstant, identTermName) shouldBe 0.0
+      similarityOf(literalConstant, termName) shouldBe 0.0
     }
 
     "yield small similarity for constant in big tree" in new ConvNLPScope {
-      similarityOf(literalConstant, big) shouldBe 0.35 +- delta
+      similarityOf(literalConstant, big) shouldBe 0.13 +- delta
     }
 
     "yield small similarity for constant in small tree" in new ConvNLPScope {
@@ -35,8 +36,8 @@ class ConvNLPTest extends WordSpec with Matchers with Inspectors {
     }
 
     "yield bigger similarity for term name in method with many term names" in new ConvNLPScope {
-      similarityOf(identTermName, manyConstantsAndTerms) should be >
-        similarityOf(identTermName, small)
+      similarityOf(termName, small) should be >
+        similarityOf(termName, manyConstantsAndTerms)
     }
   }
 
@@ -47,37 +48,28 @@ class ConvNLPTest extends WordSpec with Matchers with Inspectors {
   }
 
   class ConvNLPScope {
-    def similarityOf(f: scala.reflect.internal.Trees#Tree, s: scala.reflect.internal.Trees#Tree) =
-      ConvNLP(f, s, lambda)
+    def similarityOf(f: scala.meta.Tree, s: scala.meta.Tree) = ConvNLP(f, s, lambda)
   }
 
 }
 
 object ConvNLPTest {
 
-  implicit class TreeAug(t: scala.reflect.api.Trees#Tree) {
-    def internalFromApi = t.asInstanceOf[scala.reflect.internal.Trees#Tree]
-  }
-
   val lambda = 0.01
   val delta = 0.01
   val smallDelta = 1e-6
 
-  val smallSize = 11
-  val small =
-    Select(Apply(Select(Ident(TermName("numbers")), TermName("map")), List(Function(List(ValDef(Modifiers(), TermName("x$1"), TypeTree(), EmptyTree)), Apply(Select(Ident(TermName("x$1")), TermName("$div")), List(Literal(Constant(2))))))), TermName("headOption"))
-      .internalFromApi
+  // todo: refactor
+  val sources = Loader.sourceFilesFor(Loader.testRoot)
+  val src = sources.head.parsedSource.get
+  val bodies = src.collect {
+    case q"..$mods def $tname[..$tparams](...$paramss): $tpe = $ex" ⇒
+      ex
+  }
 
-  val big =
-    Block(List(ValDef(Modifiers(), TermName("f"), TypeTree(), Apply(Select(Ident(TermName("Future")), TermName("successful")), List(Literal(Constant("123")))))), Apply(Select(Ident(TermName("f")), TermName("flatMap")), List(Function(List(ValDef(Modifiers(), TermName("string"), TypeTree(), EmptyTree)), Apply(Select(Match(Ident(TermName("string")), List(CaseDef(Literal(Constant("a")), EmptyTree, Apply(Select(Ident(TermName("Future")), TermName("failed")), List(Apply(Select(New(Ident(TypeName("RuntimeException"))), termNames.CONSTRUCTOR), List(Literal(Constant("[TEST]"))))))), CaseDef(Literal(Constant("b")), EmptyTree, Apply(Select(Ident(TermName("Future")), TermName("successful")), List(Literal(Constant("321"))))))), TermName("map")), List(Function(List(ValDef(Modifiers(), TermName("another"), TypeTree(), EmptyTree)), Ident(TermName("another")))))))))
-      .internalFromApi
-
-  val manyConstantsAndTerms =
-    DefDef(Modifiers(), TermName("some"), List(), List(List(ValDef(Modifiers(), TermName("numbers"), AppliedTypeTree(Ident(TypeName("Seq")), List(Ident(TypeName("Int")))), EmptyTree))), TypeTree(), Block(List(ValDef(Modifiers(), TermName("a"), TypeTree(), Literal(Constant(1))), ValDef(Modifiers(), TermName("b"), TypeTree(), Literal(Constant(2))), ValDef(Modifiers(), TermName("c"), TypeTree(), Literal(Constant(3)))), Apply(Select(Apply(Select(Ident(TermName("a")), TermName("$plus")), List(Ident(TermName("b")))), TermName("$plus")), List(Ident(TermName("c"))))))
-      .internalFromApi
-
-  val (literalConstant, identTermName) = (
-    Literal(Constant(2)).internalFromApi,
-    Ident(TermName("x$1")).internalFromApi
-  )
+  val smallSize = 10
+  val small = bodies(1)
+  val big = bodies(4)
+  val manyConstantsAndTerms = bodies(3)
+  val (literalConstant, termName) = (Lit(3), Term.Name("a"))
 }

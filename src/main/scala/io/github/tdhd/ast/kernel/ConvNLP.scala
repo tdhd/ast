@@ -4,7 +4,7 @@ package io.github.tdhd.ast.kernel
 // Convolution Kernels for Natural Language
 
 import scala.annotation.tailrec
-import scala.reflect.internal.Trees
+import scala.meta.Tree
 
 trait Base {
   def similarity: Double
@@ -12,18 +12,18 @@ trait Base {
 
 object ConvNLP {
 
-  implicit class TreeAug(t: Trees#Tree) {
-    def sameAs(other: Trees#Tree) = t.shortClass == other.shortClass
+  implicit class TreeAug(t: Tree) {
+    def sameAs(other: Tree) = t.getClass == other.getClass
 
-    def differentFrom(other: Trees#Tree) = !sameAs(other)
+    def differentFrom(other: Tree) = !sameAs(other)
   }
 
-  def bothTerminals(f: Trees#Tree, s: Trees#Tree) = f.children.isEmpty && s.children.isEmpty
+  def bothTerminals(f: Tree, s: Tree) = f.children.isEmpty && s.children.isEmpty
 
-  def allNodesOf(t: Trees#Tree): Seq[Trees#Tree] = {
+  def allNodesOf(t: Tree): Seq[Tree] = {
 
     @tailrec
-    def rec(elements: Seq[Trees#Tree], accumulator: Seq[Trees#Tree]): Seq[Trees#Tree] = elements match {
+    def rec(elements: Seq[Tree], accumulator: Seq[Tree]): Seq[Tree] = elements match {
       case Nil ⇒ accumulator
       case elem :: tail ⇒ rec(elem.children ++ tail, elem +: accumulator)
     }
@@ -31,7 +31,7 @@ object ConvNLP {
     rec(t :: Nil, Nil)
   }
 
-  def apply(first: Trees#Tree, second: Trees#Tree, lambda: Double) = {
+  def apply(first: Tree, second: Tree, lambda: Double) = {
     val normalizer =
       math.sqrt(new ConvNLP(first, first, lambda).similarity * new ConvNLP(second, second, lambda).similarity)
 
@@ -39,11 +39,11 @@ object ConvNLP {
   }
 }
 
-class ConvNLP(val first: Trees#Tree, val second: Trees#Tree, val lambda: Double) extends Base {
+class ConvNLP(val first: Tree, val second: Tree, val lambda: Double) extends Base {
 
   import ConvNLP._
 
-  private def score(f: Trees#Tree, s: Trees#Tree): Double = {
+  private def score(f: Tree, s: Tree): Double = {
     if (f differentFrom s)
       0.0
     else if ((f sameAs s) && bothTerminals(f, s))
