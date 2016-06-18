@@ -9,7 +9,7 @@ import scala.meta._
 object Parser {
 
   // todo: generalize
-  def parse(file: Loader.LoaderSourceFile): Seq[scala.meta.Tree] = {
+  def functionsOf(file: Loader.LoaderSourceFile): Seq[scala.meta.Tree] = {
     file.parsedSource.get.collect {
       case q"..$mods def $tname[..$tparams](...$paramss): $tpe = $ex" ⇒
         scala.meta.Defn.Def(mods, tname, tparams, paramss, tpe, ex)

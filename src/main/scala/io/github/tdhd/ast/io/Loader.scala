@@ -24,6 +24,7 @@ object Loader {
       file ← Loader.allFiles(root)
       fileSource = file.source.parse[Source]
       // todo: use class parser
+//      _ = Parser.functionsOf(file)
       functions = fileSource.get.collect {
         case q"..$mods def $tname[..$tparams](...$paramss): $tpe = $ex" ⇒
           scala.meta.Defn.Def(mods, tname, tparams, paramss, tpe, ex)

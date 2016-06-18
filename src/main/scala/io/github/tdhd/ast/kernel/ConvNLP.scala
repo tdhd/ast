@@ -9,14 +9,11 @@ import scala.annotation.tailrec
 import scala.meta.Tree
 
 object ConvNLP {
-  def apply(first: Tree, second: Tree, lambda: Double) = {
-    val normalizer =
-      math.sqrt(new ConvNLP(first, first, lambda).similarity * new ConvNLP(second, second, lambda).similarity)
 
-    new ConvNLP(first, second, lambda).similarity / normalizer
-  }
+  def apply(first: Tree, second: Tree, lambda: Double): Double =
+    new ConvNLP(first, second, lambda).similarity
 
-  def allNodesOf(t: Tree): Seq[Tree] = {
+  private[kernel] def allNodesOf(t: Tree): Seq[Tree] = {
     @tailrec
     def rec(elements: Seq[Tree], accumulator: Seq[Tree]): Seq[Tree] = elements match {
       case Nil ⇒ accumulator
@@ -25,16 +22,21 @@ object ConvNLP {
 
     rec(t :: Nil, Nil)
   }
-
-  def bothTerminals(f: Tree, s: Tree) = f.children.isEmpty && s.children.isEmpty
 }
 
 class ConvNLP(val first: Tree, val second: Tree, val lambda: Double) extends Base {
 
   import ConvNLP._
 
-  private def score(f: Tree, s: Tree): Double = {
+  def similarity: Double = {
+    val normalizer = math.sqrt(
+      treeScore(first, first) * treeScore(second, second)
+    )
 
+    treeScore(first, second) / normalizer
+  }
+
+  private def score(f: Tree, s: Tree): Double = {
     (f, s) match {
       case (ff, ss) if ff.getClass != ss.getClass ⇒ 0.0
       case (ff, ss) if ff.getClass == ss.getClass && bothTerminals(ff, ss) ⇒ lambda
@@ -50,13 +52,14 @@ class ConvNLP(val first: Tree, val second: Tree, val lambda: Double) extends Bas
     }
   }
 
-  def similarity: Double = {
-
+  private def treeScore(f: Tree, s: Tree): Double = {
     val scores = for {
-      v1 ← allNodesOf(first)
-      v2 ← allNodesOf(second)
+      v1 ← allNodesOf(f)
+      v2 ← allNodesOf(s)
     } yield score(v1, v2)
 
     scores.sum
   }
+
+  private def bothTerminals(f: Tree, s: Tree) = f.children.isEmpty && s.children.isEmpty
 }
