@@ -5,21 +5,24 @@ object Main {
 
   def main(args: Array[String]): Unit = {
 
-    // todo: given a seq of source files, calculate all pairwise similarities
-    val tests = io.Loader.sourceFilesFor(io.Loader.testRoot)
-    // todo: use this
-    val result = tests.map(io.Parser.functionsOf)
-    val bodies = tests.head.functions
+    val f = io.Loader.loadFile("src/test/resources/code/Test.scala")
 
-//    bodies.map(_.structure).foreach(println)
-//    bodies.map(_.tokens).foreach(println)
-//    bodies.map(_.syntax).foreach(println)
+    // todo: given a seq of source files, calculate all pairwise similarities
+
+    val tests = io.Loader.sourceFilesFor(io.Loader.testRoot)
+
+    val f1 = tests.head.functions(2)
+    val f2 = tests.head.functions(3)
+
+    println(f1.structure)
+    println(f1.tokens)
+    println(f1.syntax)
 
     // given root dir, load all files and all functions
 
-    println(bodies(2))
-    println(bodies(3))
+    println(f1)
+    println(f2)
 
-    println(kernel.ConvNLP(bodies(2), bodies(3), lambda = 0.01))
+    println(kernel.ConvNLP(f1, f2, lambda = 0.01))
   }
 }
