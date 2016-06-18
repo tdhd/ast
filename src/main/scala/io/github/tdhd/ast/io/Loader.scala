@@ -13,17 +13,22 @@ object Loader {
   val testRoot = new File("src/test/resources/code")
 
   case class LoadedFile(file: File, source: String)
-  case class LoaderSourceFile(file: LoadedFile, parsedSource: Parsed[scala.meta.Source], functionBodies: Seq[Tree])
+  case class LoaderSourceFile(
+    file: LoadedFile,
+    parsedSource: Parsed[scala.meta.Source],
+    functions: Seq[scala.meta.Defn.Def]
+  )
 
   def sourceFilesFor(root: File): Seq[LoaderSourceFile] = {
     for {
       file ← Loader.allFiles(root)
       fileSource = file.source.parse[Source]
-      functionBodies = fileSource.get.collect {
+      // todo: use class parser
+      functions = fileSource.get.collect {
         case q"..$mods def $tname[..$tparams](...$paramss): $tpe = $ex" ⇒
-          ex
+          scala.meta.Defn.Def(mods, tname, tparams, paramss, tpe, ex)
       }
-    } yield LoaderSourceFile(file, fileSource, functionBodies)
+    } yield LoaderSourceFile(file, fileSource, functions)
   }
 
   private def allFiles(root: File): Seq[LoadedFile] =
