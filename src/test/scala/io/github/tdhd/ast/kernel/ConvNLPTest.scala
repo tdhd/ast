@@ -28,11 +28,11 @@ class ConvNLPTest extends WordSpec with Matchers with Inspectors {
     }
 
     "yield small similarity for constant in big tree" in new ConvNLPScope {
-      similarityOf(literalConstant, big) shouldBe 0.13 +- delta
+      similarityOf(literalConstant, big) shouldBe 0.11 +- delta
     }
 
     "yield small similarity for constant in small tree" in new ConvNLPScope {
-      similarityOf(literalConstant, small) shouldBe 0.21 +- delta
+      similarityOf(literalConstant, small) shouldBe 0.13 +- delta
     }
 
     "yield bigger similarity for term name in method with many term names" in new ConvNLPScope {
@@ -59,15 +59,9 @@ object ConvNLPTest {
   val delta = 0.01
   val smallDelta = 1e-6
 
-  // todo: refactor
-  val sources = Loader.sourceFilesFor(Loader.testRoot)
-  val src = sources.head.parsedSource.get
-  val bodies = src.collect {
-    case q"..$mods def $tname[..$tparams](...$paramss): $tpe = $ex" ⇒
-      ex
-  }
+  val bodies = Loader.sourceFilesFor(Loader.testRoot).head.functions
 
-  val smallSize = 10
+  val smallSize = 19
   val small = bodies(1)
   val big = bodies(4)
   val manyConstantsAndTerms = bodies(3)
