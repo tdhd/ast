@@ -15,8 +15,8 @@ object Loader {
   case class LoaderSourceFile(
     file: File,
     source: String,
-    functions: Seq[Tree],
-    vals: Seq[Tree]
+    functions: Seq[scala.meta.Defn.Def],
+    vals: Seq[scala.meta.Defn.Val]
   )
 
   def loadFile(path: String): LoaderSourceFile = {
