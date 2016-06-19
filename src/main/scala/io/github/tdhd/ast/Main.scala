@@ -7,18 +7,13 @@ object Main {
 
     val f = io.Loader.loadFile("src/test/resources/code/Test.scala")
 
-//    import scala.pickling.Defaults._, scala.pickling.json._
-//    val pickled = f.functions.head.pickle
-//    println(pickled)
+    val (nodes, edges) = translation.GraphBuilder(f.functions.drop(2).head)
 
-    val fnRoot = f.functions.drop(8).head
-    import org.json4s.jackson.Serialization.write
-    val json = write(translation.translate(fnRoot) :: Nil)
-    scala.tools.nsc.io.File("src/main/resources/treeData.json").writeAll(json)
+    println(nodes)
+    println(edges)
 
-//    val scores = Scorer.functionSimilaritiesFrom(f.functions)
-//    scores.map {
-//      case ((a, b), s) ⇒ (a.name, b.name, s)
-//    }.toSeq.sortBy(-_._3).foreach(println)
+    val similarities = scoring.Scorer.functionSimilaritiesFrom(f.functions)
+
+    println(similarities)
   }
 }
