@@ -20,9 +20,10 @@ object Main {
 
     val K = for {
       first ← f.functions
-    } yield f.functions.map(kernel.ConvNLP(first, _, 0.04))
+    } yield f.functions.map(kernel.ConvNLP(first, _, 0.015))
 
+    println(f.functions.map(e ⇒ s"'${e.name}'").mkString(","))
     println(s"${f.functions.size} functions in 3-space")
-    K.foreach(p ⇒ println(s"""[${p.mkString(",")}],"""))
+    K.foreach(p ⇒ println(s"""[${p.map(n ⇒ f"$n%1.2f").mkString(",")}],"""))
   }
 }
