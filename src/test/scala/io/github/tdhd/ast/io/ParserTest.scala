@@ -1,6 +1,6 @@
-package io.github.tdhd.ast.io
-
-import java.io.File
+package io.github.tdhd
+package ast
+package io
 
 import org.scalatest.{Inspectors, Matchers, WordSpec}
 

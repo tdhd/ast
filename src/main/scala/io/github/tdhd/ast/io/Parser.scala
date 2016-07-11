@@ -6,6 +6,9 @@ import scala.meta._
 
 object Parser {
 
+  def treeFrom(source: String): scala.meta.Tree =
+    source.parse[Source].get
+
   def valsOf(source: String): Seq[scala.meta.Defn.Val] =
     source.parse[Source].get.collect {
       case q"..$mods val ..$patsnel: $tpeopt = $expr" ⇒

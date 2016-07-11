@@ -1,6 +1,7 @@
-package io.github.tdhd.ast.kernel
+package io.github.tdhd
+package ast
+package kernel
 
-import io.github.tdhd.ast.io.Loader
 import org.scalatest.{Inspectors, Matchers, WordSpec}
 
 import scala.meta._
@@ -59,7 +60,7 @@ object ConvNLPTest {
   val delta = 0.01
   val smallDelta = 1e-6
 
-  val bodies = Loader.sourceFilesFor(Loader.testRoot).head.functions
+  val bodies = io.Loader.sourceFilesFor(io.Loader.testRoot).head.functions
 
   val smallSize = 19
   val small = bodies(1)

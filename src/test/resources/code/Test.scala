@@ -53,4 +53,6 @@ class Test extends BaseTrait {
     val a = Seq("a", "b", "c")
     a map (_ * 3) filter (_ == "aaa")
   }
+
+//  def deep = 1 + Some(1 + Some(1 + Some(1 + Some(1 + Some(1 + Some(1))))))
 }
