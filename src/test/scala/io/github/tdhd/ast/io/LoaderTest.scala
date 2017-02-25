@@ -2,6 +2,7 @@ package io.github.tdhd
 package ast
 package io
 
+import breeze.linalg.DenseMatrix
 import org.scalatest.{Inspectors, Matchers, WordSpec}
 
 class LoaderTest extends WordSpec with Matchers with Inspectors {
