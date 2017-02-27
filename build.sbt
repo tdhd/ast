@@ -13,6 +13,8 @@ libraryDependencies += "org.scala-graph" %% "graph-dot" % "1.11.0"
 libraryDependencies += "org.scalanlp" %% "breeze" % "0.12"
 libraryDependencies += "org.scalanlp" %% "breeze-natives" % "0.12"
 
+libraryDependencies += "com.typesafe" % "config" % "1.3.1"
+
 //scalacOptions in Test += "-Ybrowse:parser"
 
 //libraryDependencies += "com.github.haifengl" %% "smile-scala" % "1.1.0"
