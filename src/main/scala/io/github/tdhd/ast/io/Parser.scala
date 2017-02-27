@@ -17,7 +17,6 @@ object Parser {
 
   def functionsOf(source: String): Seq[scala.meta.Defn.Def] =
     source.parse[Source].get.collect {
-      case q"..$mods def $tname[..$tparams](...$paramss): $tpe = $ex" ⇒
-        scala.meta.Defn.Def(mods, tname, tparams, paramss, tpe, ex)
+      case d: scala.meta.Defn.Def ⇒ d
     }
 }
