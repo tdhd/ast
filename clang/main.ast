@@ -1,0 +1,28 @@
+TranslationUnitDecl 0x1d16c90 <<invalid sloc>> <invalid sloc>
+|-TypedefDecl 0x1d17188 <<invalid sloc>> <invalid sloc> implicit __int128_t '__int128'
+| `-BuiltinType 0x1d16ee0 '__int128'
+|-TypedefDecl 0x1d171e8 <<invalid sloc>> <invalid sloc> implicit __uint128_t 'unsigned __int128'
+| `-BuiltinType 0x1d16f00 'unsigned __int128'
+|-TypedefDecl 0x1d17278 <<invalid sloc>> <invalid sloc> implicit __builtin_ms_va_list 'char *'
+| `-PointerType 0x1d17240 'char *'
+|   `-BuiltinType 0x1d16d20 'char'
+|-TypedefDecl 0x1d17528 <<invalid sloc>> <invalid sloc> implicit __builtin_va_list 'struct __va_list_tag [1]'
+| `-ConstantArrayType 0x1d174d0 'struct __va_list_tag [1]' 1 
+|   `-RecordType 0x1d17350 'struct __va_list_tag'
+|     `-Record 0x1d172c8 '__va_list_tag'
+`-FunctionDecl 0x1d17640 </home/thread/work/ast/clang/main.c:1:1, line:3:1> line:1:5 main 'int (void)'
+  `-CompoundStmt 0x1d17940 <col:16, line:3:1>
+    `-ReturnStmt 0x1d17928 <line:2:3, col:27>
+      `-BinaryOperator 0x1d17900 <col:10, col:27> 'int' '/'
+        |-BinaryOperator 0x1d178b8 <col:10, col:24> 'int' '/'
+        | |-BinaryOperator 0x1d17870 <col:10, col:21> 'int' '/'
+        | | |-BinaryOperator 0x1d17828 <col:10, col:18> 'int' '/'
+        | | | |-BinaryOperator 0x1d177e0 <col:10, col:15> 'int' '/'
+        | | | | |-BinaryOperator 0x1d17798 <col:10, col:12> 'int' '/'
+        | | | | | |-IntegerLiteral 0x1d17758 <col:10> 'int' 1
+        | | | | | `-IntegerLiteral 0x1d17778 <col:12> 'int' 24
+        | | | | `-IntegerLiteral 0x1d177c0 <col:15> 'int' 24
+        | | | `-IntegerLiteral 0x1d17808 <col:18> 'int' 24
+        | | `-IntegerLiteral 0x1d17850 <col:21> 'int' 24
+        | `-IntegerLiteral 0x1d17898 <col:24> 'int' 24
+        `-IntegerLiteral 0x1d178e0 <col:27> 'int' 24
