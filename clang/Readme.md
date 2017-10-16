@@ -7,6 +7,10 @@ https://eli.thegreenplace.net/2011/07/03/parsing-c-in-python-with-clang
 	pip install clang==3.8
 
 
+For some files in the kernel source, the AST cannot be parsed correctly:
+
+	linux-stable/mm/hmm.c
+
 Sample
 
 ```

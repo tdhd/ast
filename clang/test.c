@@ -1,7 +1,7 @@
 #include "test.h"
 
-int main(void) {
+int main(int *some_args) {
   int x = call_me() + 1;
-  return x;
+  return x + some_args[0];
 }
 
