@@ -1,6 +1,6 @@
 import fnmatch
 import os
-
+import numpy as np
 import clang.cindex
 import pandas as pd
 import scipy.spatial.distance
@@ -52,9 +52,11 @@ if __name__ == "__main__":
             return list(node.get_children())
 
         def uniform_cost(node):
+            # todo: depending on node.kind incur different costs
             return 1
 
         def update_cost(a, b):
+            # todo: depending on nodes incur different costs
             return 1
 
         return zss.distance(
@@ -74,11 +76,30 @@ if __name__ == "__main__":
     scp = SourceCodeParser('.', '*.c')
     all_functions = scp.read_functions()
 
-    all_functions = pd.DataFrame({'function': all_functions}).function.values.reshape(-1, 1)
+    all_functions = pd.DataFrame({'node': all_functions})
+    all_functions['displayname'] = all_functions.apply(lambda row: row.node.displayname, axis=1)
+    all_functions['kind'] = all_functions.apply(lambda row: row.node.kind, axis=1)
+    all_functions['displayname'] = all_functions.apply(lambda row: row.node.displayname, axis=1)
+    all_functions['usr'] = all_functions.apply(lambda row: row.node.get_usr(), axis=1)
+    all_functions['tkind'] = all_functions.apply(lambda row: [e.kind for e in row.node.get_tokens()], axis=1)
+    all_functions['dlen'] = all_functions.apply(lambda row: len(row.node.data), axis=1)
+    all_functions['children'] = all_functions.apply(lambda row: [(e.kind, e.displayname, e.result_type.get_size()) for e in row.node.get_children()], axis=1)
+    all_functions['n_children'] = all_functions.apply(lambda row: len(list(row.node.get_children())), axis=1)
+    all_functions['n_nodes'] = all_functions.apply(lambda row: len(list(row.node.walk_preorder())), axis=1)
+    all_functions['n_args'] = all_functions.apply(lambda row: len(list(row.node.get_arguments())), axis=1)
+    all_functions['lexical_parent_kind'] = all_functions.apply(lambda row: 'None' if row.node.lexical_parent is None else row.node.lexical_parent.kind, axis=1)
+    all_functions['semantic_parent_kind'] = all_functions.apply(lambda row: 'None' if row.node.semantic_parent is None else row.node.semantic_parent.kind, axis=1)
+
+    print all_functions.head()
+    print all_functions.describe()
     similarity_mat = scipy.spatial.distance.squareform(
         scipy.spatial.distance.pdist(
-            all_functions,
+            all_functions.node.values.reshape(-1, 1),
             normalized_zss_edit_dist
         )
     )
-    print similarity_mat
+    print similarity_mat, similarity_mat.max().max()
+    most_similar_fn = all_functions.ix[np.argmax(similarity_mat.mean(axis=1))]
+    print most_similar_fn.displayname
+    least_similar_fn = all_functions.ix[np.argmin(similarity_mat.mean(axis=1))]
+    print least_similar_fn.displayname
