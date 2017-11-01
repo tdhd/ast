@@ -77,13 +77,13 @@ def optimal_costs_for_linearization(linearized_fn, similars, dissimilars, object
         :return:
         """
         print('current costs', x)
-        mean_distance_similars = np.average(
+        mean_distance_similars = np.sum(
             [editdistance.normalized_levenshtein(linearized_fn, similar, x[0], x[1], x[2]) for similar in similars]
         )
-        mean_distance_dissimilars = np.average(
+        mean_distance_dissimilars = np.sum(
             [editdistance.normalized_levenshtein(linearized_fn, dissimilar, x[0], x[1], x[2]) for dissimilar in dissimilars]
         )
-        obj = objective_weight_similars * mean_distance_similars - mean_distance_dissimilars
+        obj = objective_weight_similars * mean_distance_similars - mean_distance_dissimilars# + np.linalg.norm(x)
         print(mean_distance_similars, mean_distance_dissimilars, obj)
         return obj
 
@@ -99,7 +99,8 @@ def optimal_costs_for_linearization(linearized_fn, similars, dissimilars, object
         f,
         x0=[1, 1, 1],
         bounds=((min, max), (min, max), (min, max)),
-        tol=1e-6,
+        tol=1e-12,
+        method='L-BFGS-B'
         # constraints=cons
     )
     print(result)
@@ -207,17 +208,31 @@ if __name__ == "__main__":
         )
     )
 
-    scp = SourceCodeParser('.', '*.c')
+    scp = SourceCodeParser('src', '*.c')
     all_functions = scp.read_functions()
 
     # todo: learn optimal costs for each kind
     linearized_optimal_costs = optimal_costs_for_linearization(
-        linearization(all_functions[0]),
-        map(lambda f: linearization(f), [all_functions[1]]),
-        map(lambda f: linearization(f), all_functions[2:]),
-        objective_weight_similars=1.0
+        linearization(all_functions[500]),
+        map(linearization, all_functions[1:100]),
+        map(linearization, all_functions[100:200]),
+        objective_weight_similars=2
     )
     print(linearized_optimal_costs)
+
+    edit_dists = map(
+        lambda f: editdistance.normalized_levenshtein(
+            linearization(all_functions[500]), linearization(f)
+        ),
+        all_functions[1:200]
+    )
+
+    print(all_functions[500].displayname)
+    for ed, name in zip(edit_dists, map(lambda f: f.displayname, all_functions[1:200])):
+        print(ed, name)
+    print(np.sum(edit_dists[1:100]))
+    print(np.sum(edit_dists[100:200]))
+    edit_dists = None
 
     # print(
     #     '---',
