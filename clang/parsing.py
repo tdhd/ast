@@ -6,6 +6,7 @@ import clang.cindex
 import pandas as pd
 import scipy.spatial.distance
 import zss
+import editdistance
 
 
 class SourceCodeParser(object):
@@ -57,8 +58,42 @@ def zss_edit_dist(first, second, insert_cost, remove_cost, update_cost):
 def normalized_zss_edit_dist(first, second, insert_cost, remove_cost, update_cost):
     d = zss_edit_dist(first, second, insert_cost, remove_cost, update_cost)
     # todo: adapt for custom costs for normalization
-    # return 2.0 * d / (len(list(first.walk_preorder())) + len(list(second.walk_preorder()))) - 1.0
-    return d
+    return 2.0 * d / (len(list(first.walk_preorder())) + len(list(second.walk_preorder()))) - 1.0
+    # return d
+
+
+def optimal_costs_for_linearization(linearized_fn, similars, dissimilars):
+    import scipy.optimize
+
+    def f(x):
+        """
+        cost function to minimize, parametrizes the zss costs
+
+        :param x:
+            x[0] = insert cost
+            x[1] = removal cost
+            x[2] = update cost
+        :return:
+        """
+        print('current costs', x)
+        mean_distance_similars = np.average(
+            [editdistance.levenshtein(linearized_fn, similar, x[0], x[1], x[2]) for similar in similars]
+        )
+        mean_distance_dissimilars = np.average(
+            [editdistance.levenshtein(linearized_fn, dissimilar, x[0], x[1], x[2]) for dissimilar in dissimilars]
+        )
+        obj = mean_distance_similars - mean_distance_dissimilars
+        print(mean_distance_similars, mean_distance_dissimilars, obj)
+        return obj
+
+    result = scipy.optimize.minimize(
+        f,
+        x0=[1, 1, 1],
+        bounds=((1, None), (1, None), (1, None)),
+        tol=1e-3,
+    )
+    print(result)
+    return result.x
 
 
 def optimal_costs_for(function, similars, dissimilars):
@@ -144,19 +179,45 @@ def pairwise_distances():
 
 if __name__ == "__main__":
 
+    def linearization(node):
+        # todo: map all `kind`s to 1 byte repr
+        return ','.join(map(lambda n: str(n.kind).split(".")[-1], list(node.walk_preorder())))
+
+    print(editdistance.levenshtein("hello", "world", update_cost=1, insert_cost=2, removal_cost=2))
+    print(editdistance.levenshtein("hello", "world"))
+
     scp = SourceCodeParser('.', '*.c')
     all_functions = scp.read_functions()
 
-    for f in all_functions:
-        print(f, len(list(f.get_arguments())))
+    linearized_optimal_costs = optimal_costs_for_linearization(
+        linearization(all_functions[0]),
+        [linearization(all_functions[2])],
+        [linearization(all_functions[1])]
+    )
+    print(linearized_optimal_costs)
 
-    costs = optimal_costs_for(all_functions[0], [all_functions[1]], [all_functions[2]])
-    print(costs)
-    # similarity_mat = scipy.spatial.distance.squareform(
-    #     scipy.spatial.distance.pdist(
-    #         np.array(all_functions).reshape(-1, 1),
-    #         normalized_zss_edit_dist
+    # print(
+    #     '---',
+    #     editdistance.levenshtein(
+    #         linearization(all_functions[0]),
+    #         linearization(all_functions[1]),
+    #         removal_cost=1,
+    #         insert_cost=1.0001,
+    #         update_cost=1
     #     )
     # )
-    # print(similarity_mat)
-    # # pairwise_distances()
+    #
+    # for f in all_functions:
+    #     print(','.join(map(lambda n: str(n.kind).split(".")[-1], list(f.walk_preorder()))))
+    #     print(f, len(list(f.get_arguments())))
+    #
+    # costs = optimal_costs_for(all_functions[0], [all_functions[1]], [all_functions[2]])
+    # print(costs)
+    # # similarity_mat = scipy.spatial.distance.squareform(
+    # #     scipy.spatial.distance.pdist(
+    # #         np.array(all_functions).reshape(-1, 1),
+    # #         normalized_zss_edit_dist
+    # #     )
+    # # )
+    # # print(similarity_mat)
+    # # # pairwise_distances()
