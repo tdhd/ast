@@ -41,9 +41,28 @@ class SourceCodeParser(object):
         return all_functions
 
 
+def zss_edit_dist(first, second, insert_cost, remove_cost, update_cost):
+    def get_children(node):
+        return list(node.get_children())
+
+    return zss.distance(
+        first, second,
+        get_children=get_children,
+        insert_cost=insert_cost,
+        remove_cost=remove_cost,
+        update_cost=update_cost
+    )
+
+
+def normalized_zss_edit_dist(first, second, insert_cost, remove_cost, update_cost):
+    d = zss_edit_dist(first, second, insert_cost, remove_cost, update_cost)
+    # todo: adapt for custom costs for normalization
+    # return 2.0 * d / (len(list(first.walk_preorder())) + len(list(second.walk_preorder()))) - 1.0
+    return d
+
+
 def optimal_costs_for(function, similars, dissimilars):
     import scipy.optimize
-
 
     def f(x):
         """
@@ -55,47 +74,39 @@ def optimal_costs_for(function, similars, dissimilars):
             x[2] = update cost
         :return:
         """
-        return x[0]+x[1]+x[2]
+        print('current costs', x)
+        insert_cost = lambda node: x[0]
+        remove_cost = lambda node: x[1]
+        update_cost = lambda node_a, node_b: x[2]
+        mean_distance_similars = np.average(
+            [normalized_zss_edit_dist(function, similar, insert_cost, remove_cost, update_cost) for similar in similars]
+        )
+        mean_distance_dissimilars = np.average(
+            [normalized_zss_edit_dist(function, dissimilar, insert_cost, remove_cost, update_cost) for dissimilar in dissimilars]
+        )
+        print(mean_distance_similars, mean_distance_dissimilars)
+        obj = mean_distance_similars - mean_distance_dissimilars
+        return obj
 
     # todo: generate constraints from arguments
     cons = (
-        {'type': 'ineq', 'fun': lambda x: x[0] - 2 * x[1] + 2},
-        {'type': 'ineq', 'fun': lambda x: -x[0] + 2 * x[1] + 2}
+        {
+            'type': 'ineq',
+            'fun': lambda x:
+                normalized_zss_edit_dist(function, similars[0], lambda n: x[0], lambda n: x[1], lambda a,b: x[2]) -
+                normalized_zss_edit_dist(function, dissimilars[0], lambda n: x[0], lambda n: x[1], lambda a,b: x[2])
+        }
     )
 
     result = scipy.optimize.minimize(
         f,
         x0=[1, 1, 1],
         bounds=((1,None),(1,None),(1,None)),
+        tol=1e-24,
         constraints=cons
     )
     print(result)
-
-
-def zss_edit_dist(first, second):
-    def get_children(node):
-        return list(node.get_children())
-
-    def uniform_cost(node):
-        # todo: depending on node.kind incur different costs
-        return 1
-
-    def update_cost(a, b):
-        # todo: depending on nodes incur different costs
-        return 1
-
-    return zss.distance(
-        first[0], second[0],
-        get_children=get_children,
-        insert_cost=uniform_cost,
-        remove_cost=uniform_cost,
-        update_cost=update_cost
-    )
-
-
-def normalized_zss_edit_dist(first, second):
-    d = zss_edit_dist(first, second)
-    return 2.0 * d / (len(list(first[0].walk_preorder())) + len(list(second[0].walk_preorder()))) - 1.0
+    return result.x
 
 
 def pairwise_distances():
@@ -140,12 +151,12 @@ if __name__ == "__main__":
         print(f, len(list(f.get_arguments())))
 
     costs = optimal_costs_for(all_functions[0], [all_functions[1]], [all_functions[2]])
-
-    similarity_mat = scipy.spatial.distance.squareform(
-        scipy.spatial.distance.pdist(
-            np.array(all_functions).reshape(-1, 1),
-            normalized_zss_edit_dist
-        )
-    )
-    print(similarity_mat)
-    # pairwise_distances()
+    print(costs)
+    # similarity_mat = scipy.spatial.distance.squareform(
+    #     scipy.spatial.distance.pdist(
+    #         np.array(all_functions).reshape(-1, 1),
+    #         normalized_zss_edit_dist
+    #     )
+    # )
+    # print(similarity_mat)
+    # # pairwise_distances()
