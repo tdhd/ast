@@ -62,7 +62,7 @@ def normalized_zss_edit_dist(first, second, insert_cost, remove_cost, update_cos
     # return d
 
 
-def optimal_costs_for_linearization(linearized_fn, similars, dissimilars):
+def optimal_costs_for_linearization(linearized_fn, similars, dissimilars, objective_weight_similars=1.0):
     import scipy.optimize
 
     def f(x):
@@ -73,24 +73,34 @@ def optimal_costs_for_linearization(linearized_fn, similars, dissimilars):
             x[0] = insert cost
             x[1] = removal cost
             x[2] = update cost
+        :param objective_weight_similars: real, > 0, steers influence of similar and dissimilar in objective.
         :return:
         """
         print('current costs', x)
         mean_distance_similars = np.average(
-            [editdistance.levenshtein(linearized_fn, similar, x[0], x[1], x[2]) for similar in similars]
+            [editdistance.normalized_levenshtein(linearized_fn, similar, x[0], x[1], x[2]) for similar in similars]
         )
         mean_distance_dissimilars = np.average(
-            [editdistance.levenshtein(linearized_fn, dissimilar, x[0], x[1], x[2]) for dissimilar in dissimilars]
+            [editdistance.normalized_levenshtein(linearized_fn, dissimilar, x[0], x[1], x[2]) for dissimilar in dissimilars]
         )
-        obj = mean_distance_similars - mean_distance_dissimilars
+        obj = objective_weight_similars * mean_distance_similars - mean_distance_dissimilars
         print(mean_distance_similars, mean_distance_dissimilars, obj)
         return obj
 
+    min = 1
+    max = 2
+    cons = (
+        {
+            'type': 'eq',
+            'fun': lambda x: np.linalg.norm(x) == 1.0
+        }
+    )
     result = scipy.optimize.minimize(
         f,
         x0=[1, 1, 1],
-        bounds=((1, None), (1, None), (1, None)),
-        tol=1e-3,
+        bounds=((min, max), (min, max), (min, max)),
+        tol=1e-6,
+        # constraints=cons
     )
     print(result)
     return result.x
@@ -179,20 +189,33 @@ def pairwise_distances():
 
 if __name__ == "__main__":
 
+    kind2hex = {}
+    for idx, kind in enumerate([e for e in clang.cindex.CursorKind._kinds if e is not None]):
+        kind2hex[kind] = chr(idx)
+    print(len(kind2hex))
+
     def linearization(node):
-        # todo: map all `kind`s to 1 byte repr
-        return ','.join(map(lambda n: str(n.kind).split(".")[-1], list(node.walk_preorder())))
+        return ','.join(map(lambda n: kind2hex[n.kind], list(node.walk_preorder())))
+
 
     print(editdistance.levenshtein("hello", "world", update_cost=1, insert_cost=2, removal_cost=2))
-    print(editdistance.levenshtein("hello", "world"))
+    print(editdistance.normalized_levenshtein("aaaaaaaaaaaaaaaa", "aaaaaaaaaaaaaaab"))
+    print(
+        editdistance.levenshtein(
+            ''.join([chr(i) for i in xrange(256)]),
+            ''.join([chr(i) for i in xrange(128)])
+        )
+    )
 
     scp = SourceCodeParser('.', '*.c')
     all_functions = scp.read_functions()
 
+    # todo: learn optimal costs for each kind
     linearized_optimal_costs = optimal_costs_for_linearization(
         linearization(all_functions[0]),
-        [linearization(all_functions[2])],
-        [linearization(all_functions[1])]
+        map(lambda f: linearization(f), [all_functions[1]]),
+        map(lambda f: linearization(f), all_functions[2:]),
+        objective_weight_similars=1.0
     )
     print(linearized_optimal_costs)
 

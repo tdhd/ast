@@ -1,3 +1,8 @@
+def normalized_levenshtein(s1, s2, insert_cost=1, removal_cost=1, update_cost=1):
+    d = levenshtein(s1, s2, insert_cost, removal_cost, update_cost)
+    return 1.0*d/max(len(s1), len(s2))
+
+
 def levenshtein(s1, s2, insert_cost=1, removal_cost=1, update_cost=1):
     if len(s1) < len(s2):
         return levenshtein(s2, s1, insert_cost, removal_cost, update_cost)
