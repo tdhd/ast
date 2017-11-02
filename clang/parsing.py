@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 import scipy.spatial.distance
 import zss
+import scipy.stats
+
 
 import editdistance
 
@@ -227,9 +229,9 @@ if __name__ == "__main__":
     scp = SourceCodeParser('src', '*.c')
     all_functions = scp.read_functions()
 
-    fn_idx = 4
-    similars = all_functions[2:5]
-    dissimilars = all_functions[6:10]
+    fn_idx = 0
+    similars = all_functions[1:2]
+    dissimilars = all_functions[6:7]
     similars_fn = map(lambda f: f.displayname, similars)
     dissimilars_fn = map(lambda f: f.displayname, dissimilars)
 
@@ -237,7 +239,7 @@ if __name__ == "__main__":
         linearization(all_functions[fn_idx]),
         map(linearization, similars),
         map(linearization, dissimilars),
-        empirical_loss_weight=1,
+        empirical_loss_weight=5,
         symbol_costs=symbol_costs
     )
 
@@ -258,6 +260,13 @@ if __name__ == "__main__":
         all_functions[1:],
         symbol_costs
     )
+
+    fn_orig_index = {fn_name: index for index, fn_name in enumerate(map(lambda e: e[0], sorted_orig))}
+
+    orig_ordering = map(lambda e: fn_orig_index[e[0]], sorted_orig)
+    learned_ordering = map(lambda e: fn_orig_index[e[0]], sorted_learned)
+    corr, p = scipy.stats.spearmanr(orig_ordering, learned_ordering)
+    print(corr, p)
 
     for orig, learned in zip(sorted_orig, sorted_learned):
         print(orig, learned)
