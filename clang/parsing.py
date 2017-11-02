@@ -41,7 +41,7 @@ class SourceCodeParser(object):
 
         print('Found', len(all_functions), 'functions')
         for fn in all_functions:
-            print(fn.kind, fn.displayname)
+            print(fn.kind, fn.displayname, len(list(fn.walk_preorder())))
 
         return all_functions
 
@@ -66,7 +66,7 @@ def normalized_zss_edit_dist(first, second, insert_cost, remove_cost, update_cos
     # return d
 
 
-def optimal_costs_for_linearization(linearized_fn, similars, dissimilars, objective_weight_similars=1.0, symbol_costs=collections.OrderedDict()):
+def optimal_costs_for_linearization(linearized_fn, similars, dissimilars, empirical_loss_weight=1.0, symbol_costs=collections.OrderedDict()):
     import scipy.optimize
 
     def f(x):
@@ -77,7 +77,6 @@ def optimal_costs_for_linearization(linearized_fn, similars, dissimilars, object
             x[0] = insert cost
             x[1] = removal cost
             x[2] = update cost
-        :param objective_weight_similars: real, > 0, steers influence of similar and dissimilar in objective.
         :return:
         """
         for key, parameter in zip(symbol_costs, x):
@@ -89,13 +88,14 @@ def optimal_costs_for_linearization(linearized_fn, similars, dissimilars, object
         mean_distance_dissimilars = np.sum(
             [editdistance.normalized_levenshtein(linearized_fn, dissimilar, x[0], x[1], x[2], symbol_costs) for dissimilar in dissimilars]
         )
-        obj = objective_weight_similars * mean_distance_similars - mean_distance_dissimilars# + np.linalg.norm(x)
+        obj = empirical_loss_weight * (mean_distance_similars - mean_distance_dissimilars) + np.linalg.norm(x)
+        # obj = mean_distance_similars
         print(mean_distance_similars, mean_distance_dissimilars, obj)
         # print(obj)
         return obj
 
     min = 1
-    max = 2
+    max = None
     cons = (
         {
             'type': 'eq',
@@ -106,7 +106,7 @@ def optimal_costs_for_linearization(linearized_fn, similars, dissimilars, object
         f,
         x0=[symbol_costs[k] for k in symbol_costs],
         bounds=[(min, max) for _ in range(len(symbol_costs))],
-        tol=1e-2,
+        tol=1e-3,
         method='L-BFGS-B'
         # constraints=cons
     )
@@ -195,75 +195,81 @@ def pairwise_distances():
     print(least_similar_fn.displayname)
 
 
+def top_and_bottom_n(search_fn, searchable_fns, symbol_costs, n=3):
+    edit_dists = map(
+        lambda f: editdistance.normalized_levenshtein(
+            linearization(f),
+            linearization(search_fn),
+            symbol_costs=symbol_costs
+        ),
+        searchable_fns
+    )
+    searchable_fns = np.array(map(lambda fn: fn.displayname.split("(")[0], searchable_fns))
+    edit_dists = np.array(edit_dists)
+    idcs = np.argsort(edit_dists)
+    fns_and_dists = np.array(zip(searchable_fns, edit_dists))
+    return fns_and_dists[idcs][:n], fns_and_dists[idcs][-n:]
+
+
 if __name__ == "__main__":
     import copy
     symbol_costs = collections.OrderedDict()
     kind2hex = {}
     for idx, kind in enumerate([e for e in clang.cindex.CursorKind._kinds if e is not None]):
         kind2hex[kind] = chr(idx)
-        symbol_costs[chr(idx)] = 1.5 #np.random.rand() + 1.0
+        symbol_costs[chr(idx)] = np.random.rand() + 1.0
     orig_symbol_costs = copy.deepcopy(symbol_costs)
     print(len(kind2hex))
 
     def linearization(node):
-        return ','.join(map(lambda n: kind2hex[n.kind], list(node.walk_preorder())))
-
-
-    # print(editdistance.levenshtein("hello", "world", update_cost=1, insert_cost=2, removal_cost=2))
-    # print(editdistance.normalized_levenshtein("aaaaaaaaaaaaaaaa", "aaaaaaaaaaaaaaab"))
-    # print(
-    #     editdistance.levenshtein(
-    #         ''.join([chr(i) for i in xrange(256)]),
-    #         ''.join([chr(i) for i in xrange(128)])
-    #     )
-    # )
+        return ''.join(map(lambda n: kind2hex[n.kind], list(node.walk_preorder())))
 
     scp = SourceCodeParser('src', '*.c')
     all_functions = scp.read_functions()
 
-    fn_idx = 34
+    fn_idx = 4
+    similars = all_functions[2:5]
+    dissimilars = all_functions[6:10]
+    similars_fn = map(lambda f: f.displayname, similars)
+    dissimilars_fn = map(lambda f: f.displayname, dissimilars)
+
     linearized_optimal_costs = optimal_costs_for_linearization(
         linearization(all_functions[fn_idx]),
-        map(linearization, all_functions[1:30]),
-        map(linearization, all_functions[30:33]),
-        objective_weight_similars=1,
+        map(linearization, similars),
+        map(linearization, dissimilars),
+        empirical_loss_weight=1,
         symbol_costs=symbol_costs
     )
-    print(linearized_optimal_costs)
 
-    updated_symbol_costs = collections.OrderedDict([(key, value) for key, value in zip(symbol_costs, linearized_optimal_costs)])
-    edit_dists = map(
-        lambda f: editdistance.normalized_levenshtein(
-            linearization(all_functions[fn_idx]),
-            linearization(f),
-            # symbol_costs=orig_symbol_costs  #.94, .98
-            symbol_costs=updated_symbol_costs  #.83, .78
-        ),
-        all_functions[1:33]
-    )
+    print('positive constraints', similars_fn)
+    print('negative constraints', dissimilars_fn)
 
     print(all_functions[fn_idx].displayname)
-    for ed, name in zip(edit_dists, map(lambda f: f.displayname, all_functions[1:33])):
-        print(ed, name)
-    print(np.average(edit_dists[1:30]))
-    print(np.average(edit_dists[30:33]))
-    edit_dists = None
+    # print(list(map(lambda n: (n.displayname, n.kind), all_functions[fn_idx].walk_preorder())))
+    print('-'*10)
 
-    # print(
-    #     '---',
-    #     editdistance.levenshtein(
-    #         linearization(all_functions[0]),
-    #         linearization(all_functions[1]),
-    #         removal_cost=1,
-    #         insert_cost=1.0001,
-    #         update_cost=1
-    #     )
-    # )
-    #
-    # for f in all_functions:
-    #     print(','.join(map(lambda n: str(n.kind).split(".")[-1], list(f.walk_preorder()))))
-    #     print(f, len(list(f.get_arguments())))
-    #
+    n = 10
+    top_n, bottom_n = top_and_bottom_n(
+        all_functions[fn_idx],
+        all_functions[1:],
+        orig_symbol_costs,
+        n
+    )
+    top_n_learned, bottom_n_learned = top_and_bottom_n(
+        all_functions[fn_idx],
+        all_functions[1:],
+        symbol_costs,
+        n
+    )
+
+    for top, top_learned in zip(top_n, top_n_learned):
+        print(top, top_learned)
+
+    print('-'*10)
+
+    for bottom, bottom_learned in zip(bottom_n, bottom_n_learned):
+        print(bottom, bottom_learned)
+
     # costs = optimal_costs_for(all_functions[0], [all_functions[1]], [all_functions[2]])
     # print(costs)
     # # similarity_mat = scipy.spatial.distance.squareform(
