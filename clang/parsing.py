@@ -195,7 +195,7 @@ def pairwise_distances():
     print(least_similar_fn.displayname)
 
 
-def top_and_bottom_n(search_fn, searchable_fns, symbol_costs, n=3):
+def sort_by_edit_dists(search_fn, searchable_fns, symbol_costs):
     edit_dists = map(
         lambda f: editdistance.normalized_levenshtein(
             linearization(f),
@@ -208,7 +208,7 @@ def top_and_bottom_n(search_fn, searchable_fns, symbol_costs, n=3):
     edit_dists = np.array(edit_dists)
     idcs = np.argsort(edit_dists)
     fns_and_dists = np.array(zip(searchable_fns, edit_dists))
-    return fns_and_dists[idcs][:n], fns_and_dists[idcs][-n:]
+    return fns_and_dists[idcs]
 
 
 if __name__ == "__main__":
@@ -248,27 +248,19 @@ if __name__ == "__main__":
     # print(list(map(lambda n: (n.displayname, n.kind), all_functions[fn_idx].walk_preorder())))
     print('-'*10)
 
-    n = 10
-    top_n, bottom_n = top_and_bottom_n(
+    sorted_orig = sort_by_edit_dists(
         all_functions[fn_idx],
         all_functions[1:],
-        orig_symbol_costs,
-        n
+        orig_symbol_costs
     )
-    top_n_learned, bottom_n_learned = top_and_bottom_n(
+    sorted_learned = sort_by_edit_dists(
         all_functions[fn_idx],
         all_functions[1:],
-        symbol_costs,
-        n
+        symbol_costs
     )
 
-    for top, top_learned in zip(top_n, top_n_learned):
-        print(top, top_learned)
-
-    print('-'*10)
-
-    for bottom, bottom_learned in zip(bottom_n, bottom_n_learned):
-        print(bottom, bottom_learned)
+    for orig, learned in zip(sorted_orig, sorted_learned):
+        print(orig, learned)
 
     # costs = optimal_costs_for(all_functions[0], [all_functions[1]], [all_functions[2]])
     # print(costs)
